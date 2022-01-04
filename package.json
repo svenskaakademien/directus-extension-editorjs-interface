@@ -58,5 +58,8 @@
     "editorjs-alert": "^1.0.3",
     "editorjs-list": "^2.1.4",
     "typescript": "^4.5.2"
+  },
+  "dependencies": {
+    "cash-dom": "^8.1.0"
   }
 }

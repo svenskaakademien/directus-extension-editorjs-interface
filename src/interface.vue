@@ -59,6 +59,8 @@ import ImageTool from './custom-plugins/plugin-image-patch';
 import AttachesTool from './custom-plugins/plugin-attaches-patch';
 import PersonalityTool from './custom-plugins/plugin-personality-patch';
 
+import Grid from './sa-plugins/grid';
+
 export default defineComponent({
 	props: {
 		value: {
@@ -75,7 +77,7 @@ export default defineComponent({
 		},
 		tools: {
 			type: Array as PropType<string[]>,
-			default: () => ['header', 'list', 'code', 'image', 'paragraph', 'delimiter', 'checklist', 'quote', 'underline'],
+			default: () => ['grid', 'header', 'list', 'image', 'paragraph', 'delimiter', 'checklist', 'quote', 'underline'],
 		},
 		font: {
 			type: String,
@@ -243,6 +245,13 @@ export default defineComponent({
 			};
 
 			const defaults: Record<string, object> = {
+				grid: {
+					class: Grid,
+					inlineToolbar: true,
+					config: {
+						uploader: uploaderConfig,
+					},
+				},
 				header: {
 					class: HeaderTool,
 					shortcut: 'CMD+SHIFT+H',

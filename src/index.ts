@@ -62,6 +62,10 @@ export default {
 				options: {
 					choices: [
 						{
+							value: 'grid',
+							text: 'Grid',
+						},
+						{
 							value: 'header',
 							text: 'Header',
 						},

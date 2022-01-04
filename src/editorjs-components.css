@@ -276,3 +276,32 @@
 .tc-add-row:hover::before {
 	background-color: var(--v-list-item-background-color-hover);
 }
+
+.codex-editor .grid {
+}
+.codex-editor .grid .items {
+	display: flex;
+}
+.codex-editor .grid .items > * {
+	margin-right: 8px;
+	width: 31%;
+}
+.codex-editor .grid .buttons {
+	display: flex;
+}
+.codex-editor .grid .plus,
+.codex-editor .grid .minus {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: var(--background-subdued);
+	width: 50px;
+	height: 30px;
+	padding-left: 10px;
+	padding-right: 10px;
+	margin-right: 8px;
+	cursor: pointer;
+}
+.codex-editor .grid svg {
+	fill: none;
+}
