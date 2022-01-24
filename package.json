@@ -59,6 +59,9 @@
   "stylelint": {
     "extends": "directus-codestyle/stylelint"
   },
+  "dependencies": {
+    "cash-dom": "^8.1.0"
+  },
   "eslintConfig": {
     "extends": "./node_modules/directus-codestyle/.eslintrc.js",
     "parserOptions": {

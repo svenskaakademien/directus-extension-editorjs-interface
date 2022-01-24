@@ -16,11 +16,11 @@ export default class Grid {
 		this.config = config;
 		this.items = [];
 		if (data.length > 0) {
-			for (const obj of data || []) {
-				this.items.push(this.renderItem(new Image({ data: obj || {}, config, api, readOnly }), obj.text, obj.link));
+			for (const [i, obj] of data.entries() || []) {
+				this.items.push(this.renderItem(new Image({ data: obj || {}, config, api, readOnly }), i, obj.text, obj.link));
 			}
 		} else {
-			this.items.push(this.renderItem(new Image({ data: {}, config, api, readOnly })));
+			this.items.push(this.renderItem(new Image({ data: {}, config, api, readOnly }), this.items.length + 1));
 		}
 	}
 
@@ -35,7 +35,7 @@ export default class Grid {
 
 		let resetClass = () => wrapper.attr('class', 'grid').attr('class', 'grid len-' + this.items.length);
 		$('.plus', wrapper).on('click', () => {
-			let item = this.renderItem(new Image({ data: {}, config: this.config, api: this.api, readonly: this.readOnly }));
+			let item = this.renderItem(new Image({ data: {}, config: this.config, api: this.api, readonly: this.readOnly }), this.items.length + 1);
 			$('.items', wrapper).append(item.element);
 			this.items.push(item);
 			resetClass();
@@ -53,8 +53,7 @@ export default class Grid {
 		return wrapper.get(0);
 	}
 
-	renderItem(image, paragraphText, link) {
-		console.log('🚀 ~ file: grid.js ~ line 57 ~ link', link);
+	renderItem(image, index, paragraphText, link) {
 		let img = image.render();
 		let itemWrapper = $(String.raw`<div class="img">
                 <button style="display: ${paragraphText ? 'none' : 'block'}">Lägg till text</button>
@@ -68,7 +67,12 @@ export default class Grid {
 			$('button', itemWrapper).css({ opacity: 0, position: 'absolute' });
 			$('p', itemWrapper).addClass('visible').text('Lorem ipsum dolor sit amet.');
 		});
-
+        $("img", itemWrapper).on( "click", () => {
+            img.remove()
+            img = new Image({ data: {}, config: this.config, api: this.api, readonly: this.readOnly })
+            this.items[index].image = img
+            itemWrapper.prepend(img.render())
+        });
 		return { image, element: itemWrapper };
 	}
 
@@ -78,7 +82,6 @@ export default class Grid {
 			text: item.element.find('p').text(),
 			link: item.element.find('.link').text(),
 		}));
-		// let values = this.items.map((item) => item.image.save());
 		console.log('🚀 ~ file: grid.js ~ line 86 ~ save values', values);
 		return values;
 	}
