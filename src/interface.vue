@@ -21,7 +21,7 @@
 			</v-card-text>
 			<v-card-actions>
 				<v-button secondary @click="unsetFileHandler">
-					<i18n-t keypath="cancel" />
+					{{ t('cancel') }}
 				</v-button>
 			</v-card-actions>
 		</v-card>
@@ -31,10 +31,13 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted, watch, PropType } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useApi, useStores } from '@directus/extensions-sdk';
+import useDirectusUrl from './directus-url.js';
+
 import debounce from 'lodash/debounce';
+import isEqual from 'lodash/isEqual';
 import EditorJS from '@editorjs/editorjs';
-import useDirectusUrl from './directus-url';
 
 // Plugins
 import SimpleImageTool from '@editorjs/simple-image';
@@ -51,13 +54,15 @@ import EmbedTool from '@editorjs/embed';
 import MarkerTool from '@editorjs/marker';
 import RawToolTool from '@editorjs/raw';
 import InlineCodeTool from '@editorjs/inline-code';
-import TextAlignTool from '@canburaks/text-align-editorjs';
 import AlertTool from 'editorjs-alert';
 import StrikethroughTool from '@itech-indrustries/editorjs-strikethrough';
-import ListTool from './custom-plugins/plugin-list-patch';
-import ImageTool from './custom-plugins/plugin-image-patch';
-import AttachesTool from './custom-plugins/plugin-attaches-patch';
-import PersonalityTool from './custom-plugins/plugin-personality-patch';
+import AlignmentTuneTool from 'editorjs-text-alignment-blocktune';
+import ListTool from './custom-plugins/plugin-list-patch.js';
+import ImageTool from './custom-plugins/plugin-image-patch.js';
+import AttachesTool from './custom-plugins/plugin-attaches-patch.js';
+import PersonalityTool from './custom-plugins/plugin-personality-patch.js';
+
+type UploaderHandler = (file: Record<string, any>) => void;
 
 import Grid from './sa-plugins/grid';
 
@@ -96,6 +101,8 @@ export default defineComponent({
 	emits: ['input'],
 
 	setup(props, { emit, attrs }) {
+		const { t } = useI18n();
+
 		const api = useApi();
 		const { addTokenToURL } = useDirectusUrl(api);
 		const { useCollectionsStore } = useStores();
@@ -104,9 +111,11 @@ export default defineComponent({
 		const editorjsInstance = ref<EditorJS>();
 		const uploaderComponentElement = ref(null);
 		const editorElement = ref<HTMLElement>();
-		const fileHandler = ref<Function | null>(null);
+		const fileHandler = ref<UploaderHandler | null>(null);
 		const haveFilesAccess = Boolean(collectionStore.getCollection('directus_files'));
-		const editorValueEmitter = debounce(emitValue, 250);
+
+		const skipEmit = ref<boolean>(false);
+		const skipWatch = ref<boolean>(false);
 
 		onMounted(() => {
 			editorjsInstance.value = new EditorJS({
@@ -117,9 +126,9 @@ export default defineComponent({
 				// https://github.com/codex-team/editor.js/issues/1669
 				readOnly: false,
 				placeholder: props.placeholder,
+				minHeight: 72,
+				onChange: emitValue,
 				tools: buildToolsOptions(),
-				minHeight: 24,
-				onChange: editorValueEmitter,
 			});
 
 			if (attrs.autofocus) {
@@ -135,30 +144,34 @@ export default defineComponent({
 
 		watch(
 			() => props.value,
-			(newVal, oldVal) => {
-				if (
-					!editorjsInstance.value ||
-					// @TODO use better method for comparing.
-					JSON.stringify(newVal?.blocks) === JSON.stringify(oldVal?.blocks)
-				) {
+			debounce((newVal: any, oldVal: any) => {
+				if (skipWatch.value) {
+					skipWatch.value = false;
 					return;
 				}
 
-				editorjsInstance.value.isReady.then(() => {
-					if (!editorjsInstance.value) return;
+				if (!editorjsInstance.value || !editorjsInstance.value.isReady) return;
 
-					// Do not render if in current file operation.
-					if (fileHandler.value !== null) return;
+				// Do not render if in current file operation.
+				if (fileHandler.value !== null) return;
 
-					// Do not render if in current focus.
-					if (editorjsInstance.value.configuration?.holder.contains(document.activeElement)) return;
+				if (isDocEqual(newVal, oldVal)) return;
 
-					editorjsInstance.value.render(getPreparedValue(newVal));
-				});
-			}
+				editorjsInstance.value.isReady
+					.then(() => {
+						if (!editorjsInstance.value) return;
+
+						skipEmit.value = true;
+						editorjsInstance.value.render(getPreparedValue(newVal));
+					})
+					.catch((error) => {
+						window.console.warn('editorjs-extension: %s', error);
+					});
+			}, 150)
 		);
 
 		return {
+			t,
 			editorjsInstance,
 			editorElement,
 			uploaderComponentElement,
@@ -169,39 +182,39 @@ export default defineComponent({
 			},
 			haveFilesAccess,
 
-			// Methods
-			editorValueEmitter,
 			unsetFileHandler,
-			setFileHandler,
 			handleFile,
-			getUploadFieldElement,
-			addTokenToURL,
-			getPreparedValue,
-			buildToolsOptions,
 		};
 
-		async function emitValue(context: EditorJS): Promise<void> {
-			if (props.disabled || !context) return;
-
-			let result: EditorJS.OutputData | null = null;
-			try {
-				result = await context.saver.save();
-			} catch (error) {
-				console.warn('editorjs-extension: %s', error);
+		function emitValue(context: EditorJS.API): void {
+			if (skipEmit.value) {
+				skipEmit.value = false;
+				return;
 			}
 
-			if (!result || result.blocks.length < 1) {
-				emit('input', null);
-			} else {
-				emit('input', result);
-			}
+			if (props.disabled || !context || !context.saver) return;
+
+			context.saver
+				.save()
+				.then((result: EditorJS.OutputData) => {
+					skipWatch.value = true;
+
+					if (!result || result.blocks.length < 1) {
+						emit('input', null);
+					} else {
+						emit('input', result);
+					}
+				})
+				.catch((error) => {
+					window.console.warn('editorjs-extension: %s', error);
+				});
 		}
 
 		function unsetFileHandler() {
 			fileHandler.value = null;
 		}
 
-		function setFileHandler(handler: Function) {
+		function setFileHandler(handler: UploaderHandler) {
 			fileHandler.value = handler;
 		}
 
@@ -233,18 +246,35 @@ export default defineComponent({
 			};
 		}
 
-		/**
-		 * @returns {{}}
-		 */
-		function buildToolsOptions() {
+		function isDocEqual(object1: any, object2: any) {
+			if (!object1 && !object2) return true;
+			if ((object1 === null && object2) || (object1 && object2 === null)) return false;
+			if ((!object1.blocks && object2.blocks) || (object1.blocks && !object2.blocks)) return false;
+			if (object1.blocks.length !== object2.blocks.length) return false;
+
+			for (let i = 0; i < object1.blocks.length; i++) {
+				try {
+					if (!isEqual({ ...object1.blocks[i], id: '' }, { ...object2.blocks[i], id: '' })) return false;
+				} catch {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		function buildToolsOptions(): Record<string, object> {
 			const uploaderConfig = {
 				addTokenToURL,
 				baseURL: api.defaults.baseURL,
-				picker: setFileHandler,
+				setFileHandler,
 				getUploadFieldElement,
+				t: {
+					no_file_selected: t('no_file_selected'),
+				},
 			};
 
-			const defaults: Record<string, object> = {
+			const defaults: Record<string, { class: any } & Record<string, any>> = {
 				grid: {
 					class: Grid,
 					inlineToolbar: true,
@@ -281,11 +311,6 @@ export default defineComponent({
 				underline: {
 					class: UnderlineTool,
 					shortcut: 'CMD+SHIFT+U',
-				},
-				textalign: {
-					class: TextAlignTool,
-					inlineToolbar: true,
-					shortcut: 'CMD+SHIFT+A',
 				},
 				strikethrough: {
 					class: StrikethroughTool,
@@ -341,6 +366,9 @@ export default defineComponent({
 						uploader: uploaderConfig,
 					},
 				},
+				alignmentTune: {
+					class: AlignmentTuneTool,
+				},
 			};
 
 			// Build current tools config.
@@ -352,6 +380,12 @@ export default defineComponent({
 				if (toolName in defaults) {
 					tools[toolName.toString()] = defaults[toolName];
 				}
+			}
+
+			if ('alignmentTune' in tools) {
+				tools.paragraph.tunes = ['alignmentTune'];
+				tools.header.tunes = ['alignmentTune'];
+				tools.quote.tunes = ['alignmentTune'];
 			}
 
 			return tools;
