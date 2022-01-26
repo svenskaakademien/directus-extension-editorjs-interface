@@ -35,7 +35,10 @@ export default class Grid {
 
 		let resetClass = () => wrapper.attr('class', 'grid').attr('class', 'grid len-' + this.items.length);
 		$('.plus', wrapper).on('click', () => {
-			let item = this.renderItem(new Image({ data: {}, config: this.config, api: this.api, readonly: this.readOnly }), this.items.length + 1);
+			let item = this.renderItem(
+				new Image({ data: {}, config: this.config, api: this.api, readonly: this.readOnly }),
+				this.items.length + 1
+			);
 			$('.items', wrapper).append(item.element);
 			this.items.push(item);
 			resetClass();
@@ -67,12 +70,12 @@ export default class Grid {
 			$('button', itemWrapper).css({ opacity: 0, position: 'absolute' });
 			$('p', itemWrapper).addClass('visible').text('Lorem ipsum dolor sit amet.');
 		});
-        $("img", itemWrapper).on( "click", () => {
-            img.remove()
-            img = new Image({ data: {}, config: this.config, api: this.api, readonly: this.readOnly })
-            this.items[index].image = img
-            itemWrapper.prepend(img.render())
-        });
+		$('img', itemWrapper).on('click', () => {
+			img.remove();
+			img = new Image({ data: {}, config: this.config, api: this.api, readonly: this.readOnly });
+			this.items[index].image = img;
+			itemWrapper.prepend(img.render());
+		});
 		return { image, element: itemWrapper };
 	}
 
@@ -82,7 +85,6 @@ export default class Grid {
 			text: item.element.find('p').text(),
 			link: item.element.find('.link').text(),
 		}));
-		console.log('🚀 ~ file: grid.js ~ line 86 ~ save values', values);
 		return values;
 	}
 }
