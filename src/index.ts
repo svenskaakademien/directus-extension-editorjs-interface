@@ -1,7 +1,7 @@
-import { InterfaceConfig } from '@directus/shared/types';
+import { defineInterface } from '@directus/extensions-sdk';
 import InterfaceComponent from './interface.vue';
 
-export default {
+export default defineInterface({
 	id: 'extension-editorjs',
 	name: 'Editor.js',
 	description: 'Block-styled editor for rich media stories, outputs clean data in JSON using Editor.js',
@@ -54,7 +54,7 @@ export default {
 			name: '$t:interfaces.input-rich-text-html.toolbar',
 			type: 'json',
 			schema: {
-				default_value: ['header', 'list', 'code', 'image', 'paragraph', 'delimiter', 'checklist', 'quote', 'underline'],
+				default_value: ['header', 'nestedlist', 'code', 'image', 'paragraph', 'delimiter', 'checklist', 'quote', 'underline'],
 			},
 			meta: {
 				width: 'half',
@@ -71,7 +71,11 @@ export default {
 						},
 						{
 							value: 'list',
-							text: 'List',
+							text: 'List (legacy)',
+						},
+						{
+							value: 'nestedlist',
+							text: 'Nested List',
 						},
 						{
 							value: 'embed',
@@ -182,4 +186,4 @@ export default {
 			},
 		},
 	],
-} as InterfaceConfig;
+});
