@@ -328,3 +328,10 @@
 	content: attr(placeholder);
 	color: grey;
 }
+
+.grid-settings {
+	display: flex;
+	align-items: center;
+	margin: 5px;
+	gap: 7px;
+}

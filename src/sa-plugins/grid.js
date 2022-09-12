@@ -11,17 +11,20 @@ export default class Grid {
 	}
 
 	constructor({ data, config, api, readOnly }) {
-		this.data = data;
 		this.api = api;
 		this.config = config;
 		this.items = [];
-		if (data.length > 0) {
-			for (const [i, obj] of data.entries() || []) {
+		if (data?.length > 0) {
+			data = { titleOverImg: data.titleOverImg, items: data };
+		}
+		if (data.items?.length > 0) {
+			for (const [i, obj] of data.items.entries() || []) {
 				this.items.push(this.renderItem(new Image({ data: obj || {}, config, api, readOnly }), i, obj.text, obj.link));
 			}
 		} else {
 			this.items.push(this.renderItem(new Image({ data: {}, config, api, readOnly }), this.items.length + 1));
 		}
+		this.data = data;
 	}
 
 	render() {
@@ -85,6 +88,29 @@ export default class Grid {
 			text: item.element.find('p').text(),
 			link: item.element.find('.link').text(),
 		}));
-		return values;
+		return { titleOverImg: this.data.titleOverImg, items: values, useGridConfig: this.data.useGridConfig };
+	}
+
+	renderSettings() {
+		let wrapper = $(String.raw`<div class="grid-settings">
+			<input id="title_over_img" type="checkbox">
+			<label for="title_over_img" >Titel över bild</label>
+			<br>
+			<input id="gridconfig" type="checkbox">
+			<label for="gridconfig" >Använd avancerad layout</label>
+			</div>`);
+		wrapper
+			.find('#title_over_img')
+			.prop('checked', this.data.titleOverImg)
+			.on('change', () => {
+				this.data.titleOverImg = $('#title_over_img').is(':checked');
+			});
+		wrapper
+			.find('#gridconfig')
+			.prop('checked', this.data.useGridConfig)
+			.on('change', () => {
+				this.data.useGridConfig = $('#gridconfig').is(':checked');
+			});
+		return wrapper.get(0);
 	}
 }
