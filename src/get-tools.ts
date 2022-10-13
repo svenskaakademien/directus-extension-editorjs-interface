@@ -15,7 +15,7 @@ import InlineCodeTool from '@editorjs/inline-code';
 import AlertTool from 'editorjs-alert';
 import StrikethroughTool from '@itech-indrustries/editorjs-strikethrough';
 import AlignmentTuneTool from 'editorjs-text-alignment-blocktune';
-import NestedListTool from '@editorjs/nested-list';
+// import NestedListTool from '@editorjs/nested-list';
 import ListTool from 'editorjs-list';
 import ImageTool from './custom-plugins/plugin-image-patch.js';
 import AttachesTool from './custom-plugins/plugin-attaches-patch.js';
@@ -58,11 +58,11 @@ export default function getTools(
 			inlineToolbar: false,
 			shortcut: 'CMD+SHIFT+1',
 		},
-		nestedlist: {
-			class: NestedListTool,
-			inlineToolbar: true,
-			shortcut: 'CMD+SHIFT+L',
-		},
+		// nestedlist: {
+		// 	class: NestedListTool,
+		// 	inlineToolbar: true,
+		// 	shortcut: 'CMD+SHIFT+L',
+		// },
 		embed: {
 			class: EmbedTool,
 			inlineToolbar: true,
